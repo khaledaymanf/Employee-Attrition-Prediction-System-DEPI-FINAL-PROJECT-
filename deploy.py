@@ -2,7 +2,7 @@
 import requests
 
 
-URL = "https://employee-attritionprediction.streamlit.app"
+URL = "https://employee-attritionprediction.streamlit.app/"
 
 
 data = {
@@ -72,4 +72,5 @@ except requests.exceptions.RequestException as e:
 
 except ValueError:
     print("Error: Response is not valid JSON")
+
 
