@@ -1,13 +1,13 @@
-# streamlit_app.py
 import streamlit as st
-import requests
-import time
-
-API_URL = "https://employee-attritionprediction.streamlit.app/"
+import pickle
+import numpy as np
 
 st.set_page_config(page_title="Employee Attrition Predictor", layout="wide")
 st.title("💼 Employee Attrition Prediction")
 st.markdown("Provide the following key features:")
+
+with open("employee_attrition_model.pkl", "rb") as f:
+    model = pickle.load(f)
 
 with st.form("form"):
     col1, col2, col3 = st.columns(3)
@@ -39,31 +39,15 @@ if submitted:
         "JobInvolvement": job_involvement,
         "JobSatisfaction": job_satisfaction,
         "YearsAtCompany": years_at_company,
-
         "OverTime_Yes": 1 if overtime == "Yes" else 0,
         "JobRole_Sales Executive": 1 if job_role == "Sales Executive" else 0,
         "MaritalStatus_Married": 1 if marital_status == "Married" else 0,
     }
 
-    with st.spinner("Contacting server..."):
-        time.sleep(0.7)
-        try:
-            r = requests.post(API_URL, json=payload)
-            res = r.json()
-
-            pred = res["prediction"]
-            prob = res["probability"] * 100
-
-            st.subheader("📊 Result")
-            st.metric("Prediction", pred)
-            st.metric("Confidence", f"{prob:.2f}%")
-
-            if pred == "Yes":
-                st.error("⚠️ High Risk: Employee likely to leave.")
-            else:
-                st.success("✅ Low Risk: Employee likely to stay.")
-
-        except Exception as e:
-            st.error(f"Error: {e}")
-
-
+    # نسخ القيم الافتراضية للخصائص اللي مش موجودة
+    default_features = {
+        'Education': 3,
+        'EnvironmentSatisfaction': 3,
+        'MonthlyIncome': 6500,
+        'MonthlyRate': 14000,
+        'NumCompaniesWorked': 2,
