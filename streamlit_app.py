@@ -3,7 +3,7 @@ import streamlit as st
 import requests
 import time
 
-API_URL = "http://localhost:5000/predict"
+API_URL = "https://employee-attritionprediction.streamlit.app/"
 
 st.set_page_config(page_title="Employee Attrition Predictor", layout="wide")
 st.title("💼 Employee Attrition Prediction")
@@ -65,3 +65,4 @@ if submitted:
 
         except Exception as e:
             st.error(f"Error: {e}")
+
