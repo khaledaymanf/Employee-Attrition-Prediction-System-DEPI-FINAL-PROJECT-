@@ -1,10 +1,11 @@
 # deploy.py
-import requests
+import pickle
+import numpy as np
 
+with open("employee_attrition_model.pkl", "rb") as f:
+    model = pickle.load(f)
 
-URL = "https://employee-attritionprediction.streamlit.app/"
-
-
+# مثال بيانات اختبارية
 data = {
     'Age': 37,
     'DailyRate': 800,
@@ -58,19 +59,9 @@ data = {
     'WorkLifeScore': 3.0
 }
 
-try:
-    response = requests.post(URL, json=data)
+vector = np.array([data[k] for k in data]).reshape(1, -1)
+proba = model.predict_proba(vector)[0][1]
+prediction = "Yes" if proba >= 0.5 else "No"
 
-    print("Status code:", response.status_code)
-    print("Response text:", response.text)
-
-    result = response.json()
-    print("\nPrediction Result:", result)
-
-except requests.exceptions.RequestException as e:
-    print("Request failed:", e)
-
-except ValueError:
-    print("Error: Response is not valid JSON")
-
-
+print(f"Prediction: {prediction}")
+print(f"Probability: {proba*100:.2f}%")
