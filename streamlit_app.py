@@ -51,3 +51,51 @@ if submitted:
         'MonthlyIncome': 6500,
         'MonthlyRate': 14000,
         'NumCompaniesWorked': 2,
+        'PercentSalaryHike': 12,
+        'PerformanceRating': 3,
+        'RelationshipSatisfaction': 3,
+        'StockOptionLevel': 1,
+        'TrainingTimesLastYear': 3,
+        'WorkLifeBalance': 3,
+        'BusinessTravel_Travel_Frequently': 0,
+        'BusinessTravel_Travel_Rarely': 1,
+        'Department_Research & Development': 1,
+        'Department_Sales': 0,
+        'EducationField_Life Sciences': 1,
+        'EducationField_Marketing': 0,
+        'EducationField_Medical': 0,
+        'EducationField_Other': 0,
+        'EducationField_Technical Degree': 0,
+        'Gender_Male': 1,
+        'JobRole_Human Resources': 0,
+        'JobRole_Laboratory Technician': 0,
+        'JobRole_Manager': 0,
+        'JobRole_Manufacturing Director': 0,
+        'JobRole_Research Director': 0,
+        'JobRole_Research Scientist': 0,
+        'JobRole_Sales Representative': 0,
+        'MaritalStatus_Single': 0,
+        'OverTime_Yes': payload["OverTime_Yes"],
+        'TenureRatio': 0.5,
+        'YearsSincePromotionRatio': 0.15,
+        'IncomePerYear': 6000,
+        'IncomeToAge': 200,
+        'WorkLifeScore': 3.0
+    }
+
+    # دمج بيانات المستخدم مع الافتراضية
+    for k,v in payload.items():
+        default_features[k] = v
+
+    vector = np.array([default_features[k] for k in default_features]).reshape(1, -1)
+    proba = model.predict_proba(vector)[0][1]
+    prediction = "Yes" if proba >= 0.5 else "No"
+
+    st.subheader("📊 Result")
+    st.metric("Prediction", prediction)
+    st.metric("Confidence", f"{proba*100:.2f}%")
+
+    if prediction == "Yes":
+        st.error("⚠️ High Risk: Employee likely to leave.")
+    else:
+        st.success("✅ Low Risk: Employee likely to stay.")
