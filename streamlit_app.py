@@ -1,13 +1,14 @@
 import streamlit as st
 import pickle
 import numpy as np
+from joblib import load
+
 
 st.set_page_config(page_title="Employee Attrition Predictor", layout="wide")
 st.title("💼 Employee Attrition Prediction")
 st.markdown("Provide the following key features:")
 
-with open("employee_attrition_model.pkl", "rb") as f:
-    model = pickle.load(f)
+model = load("employee_attrition_model.pkl")
 
 with st.form("form"):
     col1, col2, col3 = st.columns(3)
@@ -99,3 +100,4 @@ if submitted:
         st.error("⚠️ High Risk: Employee likely to leave.")
     else:
         st.success("✅ Low Risk: Employee likely to stay.")
+
