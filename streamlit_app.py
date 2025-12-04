@@ -1,9 +1,67 @@
-# streamlit_app.py
 import streamlit as st
-import requests
+import pickle
+import numpy as np
 import time
 
-API_URL = "http://localhost:5000/predict"
+MODEL_PATH = "employee_attrition_model.pkl"
+
+with open(MODEL_PATH, "rb") as f:
+    model = pickle.load(f)
+
+DEFAULT_FEATURES = {
+    'Age': 37,
+    'DailyRate': 800,
+    'DistanceFromHome': 9,
+    'Education': 3,
+    'EnvironmentSatisfaction': 3,
+    'HourlyRate': 66,
+    'JobInvolvement': 3,
+    'JobLevel': 2,
+    'JobSatisfaction': 3,
+    'MonthlyIncome': 6500,
+    'MonthlyRate': 14000,
+    'NumCompaniesWorked': 2,
+    'PercentSalaryHike': 12,
+    'PerformanceRating': 3,
+    'RelationshipSatisfaction': 3,
+    'StockOptionLevel': 1,
+    'TotalWorkingYears': 11,
+    'TrainingTimesLastYear': 3,
+    'WorkLifeBalance': 3,
+    'YearsAtCompany': 7,
+    'YearsInCurrentRole': 4,
+    'YearsSinceLastPromotion': 2,
+    'YearsWithCurrManager': 4,
+    'IncomePerYearExperience': 500,
+    'BusinessTravel_Travel_Frequently': 0,
+    'BusinessTravel_Travel_Rarely': 1,
+    'Department_Research & Development': 1,
+    'Department_Sales': 0,
+    'EducationField_Life Sciences': 1,
+    'EducationField_Marketing': 0,
+    'EducationField_Medical': 0,
+    'EducationField_Other': 0,
+    'EducationField_Technical Degree': 0,
+    'Gender_Male': 1,
+    'JobRole_Human Resources': 0,
+    'JobRole_Laboratory Technician': 0,
+    'JobRole_Manager': 0,
+    'JobRole_Manufacturing Director': 0,
+    'JobRole_Research Director': 0,
+    'JobRole_Research Scientist': 0,
+    'JobRole_Sales Executive': 0,
+    'JobRole_Sales Representative': 0,
+    'MaritalStatus_Married': 0,
+    'MaritalStatus_Single': 0,
+    'OverTime_Yes': 0,
+    'TenureRatio': 0.5,
+    'YearsSincePromotionRatio': 0.15,
+    'IncomePerYear': 6000,
+    'IncomeToAge': 200,
+    'WorkLifeScore': 3.0
+}
+
+ORDERED_KEYS = list(DEFAULT_FEATURES.keys())
 
 st.set_page_config(page_title="Employee Attrition Predictor", layout="wide")
 st.title("💼 Employee Attrition Prediction")
@@ -31,37 +89,32 @@ with st.form("form"):
     submitted = st.form_submit_button("Predict", type="primary")
 
 if submitted:
-    payload = {
-        "Age": age,
-        "DailyRate": daily_rate,
-        "DistanceFromHome": distance,
-        "HourlyRate": hourly_rate,
-        "JobInvolvement": job_involvement,
-        "JobSatisfaction": job_satisfaction,
-        "YearsAtCompany": years_at_company,
+    payload = DEFAULT_FEATURES.copy()
 
-        "OverTime_Yes": 1 if overtime == "Yes" else 0,
-        "JobRole_Sales Executive": 1 if job_role == "Sales Executive" else 0,
-        "MaritalStatus_Married": 1 if marital_status == "Married" else 0,
-    }
+    payload["Age"] = age
+    payload["DailyRate"] = daily_rate
+    payload["DistanceFromHome"] = distance
+    payload["HourlyRate"] = hourly_rate
+    payload["JobInvolvement"] = job_involvement
+    payload["JobSatisfaction"] = job_satisfaction
+    payload["YearsAtCompany"] = years_at_company
+    payload["OverTime_Yes"] = 1 if overtime == "Yes" else 0
+    payload["JobRole_Sales Executive"] = 1 if job_role == "Sales Executive" else 0
+    payload["MaritalStatus_Married"] = 1 if marital_status == "Married" else 0
+    payload["MaritalStatus_Single"] = 1 if marital_status == "Single" else 0
 
-    with st.spinner("Contacting server..."):
-        time.sleep(0.7)
-        try:
-            r = requests.post(API_URL, json=payload)
-            res = r.json()
+    vector = np.array([payload[k] for k in ORDERED_KEYS]).reshape(1, -1)
 
-            pred = res["prediction"]
-            prob = res["probability"] * 100
+    with st.spinner("Predicting..."):
+        time.sleep(0.5)
+        proba = model.predict_proba(vector)[0][1]
+        pred = "Yes" if proba >= 0.5 else "No"
 
-            st.subheader("📊 Result")
-            st.metric("Prediction", pred)
-            st.metric("Confidence", f"{prob:.2f}%")
+    st.subheader("📊 Result")
+    st.metric("Prediction", pred)
+    st.metric("Confidence", f"{proba*100:.2f}%")
 
-            if pred == "Yes":
-                st.error("⚠️ High Risk: Employee likely to leave.")
-            else:
-                st.success("✅ Low Risk: Employee likely to stay.")
-
-        except Exception as e:
-            st.error(f"Error: {e}")
+    if pred == "Yes":
+        st.error("⚠️ High Risk: Employee likely to leave.")
+    else:
+        st.success("✅ Low Risk: Employee likely to stay.")
