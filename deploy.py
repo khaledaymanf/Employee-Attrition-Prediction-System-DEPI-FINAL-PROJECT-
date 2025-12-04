@@ -1,12 +1,13 @@
-# deploy.py
+# app.py
 import pickle
 import numpy as np
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
-with open("employee_attrition_model.pkl", "rb") as f:
-    model = pickle.load(f)
+MODEL_PATH = "employee_attrition_model.pkl"
 
-# مثال بيانات اختبارية
-data = {
+#EXACT 51 FEATURES EXPECTED BY THE MODEL
+DEFAULT_FEATURES = {
     'Age': 37,
     'DailyRate': 800,
     'DistanceFromHome': 9,
@@ -31,6 +32,8 @@ data = {
     'YearsSinceLastPromotion': 2,
     'YearsWithCurrManager': 4,
     'IncomePerYearExperience': 500,
+
+    # One-hot Encoding
     'BusinessTravel_Travel_Frequently': 0,
     'BusinessTravel_Travel_Rarely': 1,
     'Department_Research & Development': 1,
@@ -52,6 +55,8 @@ data = {
     'MaritalStatus_Married': 0,
     'MaritalStatus_Single': 0,
     'OverTime_Yes': 0,
+
+    # Engineered Features
     'TenureRatio': 0.5,
     'YearsSincePromotionRatio': 0.15,
     'IncomePerYear': 6000,
@@ -59,9 +64,47 @@ data = {
     'WorkLifeScore': 3.0
 }
 
-vector = np.array([data[k] for k in data]).reshape(1, -1)
-proba = model.predict_proba(vector)[0][1]
-prediction = "Yes" if proba >= 0.5 else "No"
+# Ensure the order matches training data
+ORDERED_KEYS = list(DEFAULT_FEATURES.keys())
 
-print(f"Prediction: {prediction}")
-print(f"Probability: {proba*100:.2f}%")
+app = Flask(__name__)
+CORS(app)
+
+# Load model
+try:
+    with open(MODEL_PATH, "rb") as f:
+        model = pickle.load(f)
+    print("Model loaded successfully!")
+except:
+    model = None
+    print("ERROR: Could not load model.")
+
+@app.route("/predict", methods=["POST"])
+def predict_attrition():
+    if model is None:
+        return jsonify({"error": "Model not loaded"}), 500
+
+    data = request.get_json(silent=True) or {}
+
+    inputs = DEFAULT_FEATURES.copy()
+
+    # Overwrite only provided fields
+    for k, v in data.items():
+        if k in inputs:
+            inputs[k] = v
+
+    # Convert to numpy vector in the correct order
+    vector = np.array([inputs[k] for k in ORDERED_KEYS]).reshape(1, -1)
+
+    # Predict
+    proba = model.predict_proba(vector)[0][1]
+    prediction = "Yes" if proba >= 0.5 else "No"
+
+    return jsonify({
+        "prediction": prediction,
+        "probability": float(proba)
+    })
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
