@@ -19,4 +19,7 @@ It includes:
 The model predicts employee attrition as **Yes / No**, along with the prediction probability.
 
 ---
+## 🚀 Project Link
+
+https://employee-attritionprediction.streamlit.app/
 
